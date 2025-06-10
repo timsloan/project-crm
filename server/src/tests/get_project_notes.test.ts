@@ -93,11 +93,10 @@ describe('getProjectNotes', () => {
       .execute();
 
     const input: GetProjectNotesInput = {
-      project_id: testProjectId,
-      user_id: testUserId
+      project_id: testProjectId
     };
 
-    const result = await getProjectNotes(input);
+    const result = await getProjectNotes(input, testUserId);
 
     expect(result).toHaveLength(2);
     expect(result[0].content).toEqual('Public note 1');
@@ -127,23 +126,17 @@ describe('getProjectNotes', () => {
 
     // User 1 should only see their own private note
     const input1: GetProjectNotesInput = {
-      project_id: testProjectId,
-      user_id: testUserId
+      project_id: testProjectId
     };
 
-    const result1 = await getProjectNotes(input1);
+    const result1 = await getProjectNotes(input1, testUserId);
 
     expect(result1).toHaveLength(1);
     expect(result1[0].content).toEqual('Private note by user 1');
     expect(result1[0].created_by).toEqual(testUserId);
 
     // User 2 should only see their own private note
-    const input2: GetProjectNotesInput = {
-      project_id: testProjectId,
-      user_id: testUser2Id
-    };
-
-    const result2 = await getProjectNotes(input2);
+    const result2 = await getProjectNotes(input1, testUser2Id);
 
     expect(result2).toHaveLength(1);
     expect(result2[0].content).toEqual('Private note by user 2');
@@ -176,11 +169,10 @@ describe('getProjectNotes', () => {
       .execute();
 
     const input: GetProjectNotesInput = {
-      project_id: testProjectId,
-      user_id: testUserId
+      project_id: testProjectId
     };
 
-    const result = await getProjectNotes(input);
+    const result = await getProjectNotes(input, testUserId);
 
     expect(result).toHaveLength(2);
     
@@ -193,11 +185,10 @@ describe('getProjectNotes', () => {
 
   it('should return empty array for project with no notes', async () => {
     const input: GetProjectNotesInput = {
-      project_id: testProjectId,
-      user_id: testUserId
+      project_id: testProjectId
     };
 
-    const result = await getProjectNotes(input);
+    const result = await getProjectNotes(input, testUserId);
 
     expect(result).toHaveLength(0);
   });
@@ -227,11 +218,10 @@ describe('getProjectNotes', () => {
       .execute();
 
     const input: GetProjectNotesInput = {
-      project_id: testProjectId,
-      user_id: testUserId
+      project_id: testProjectId
     };
 
-    const result = await getProjectNotes(input);
+    const result = await getProjectNotes(input, testUserId);
 
     expect(result).toHaveLength(2);
     expect(result[0].content).toEqual('First note');
@@ -250,11 +240,10 @@ describe('getProjectNotes', () => {
       .execute();
 
     const input: GetProjectNotesInput = {
-      project_id: testProjectId,
-      user_id: testUserId
+      project_id: testProjectId
     };
 
-    const result = await getProjectNotes(input);
+    const result = await getProjectNotes(input, testUserId);
 
     expect(result).toHaveLength(1);
     const note = result[0];

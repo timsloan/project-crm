@@ -1,4 +1,3 @@
-
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { resetDB, createDB } from '../helpers';
 import { db } from '../db';
@@ -57,11 +56,10 @@ describe('createProjectWiki', () => {
     const testInput: CreateProjectWikiInput = {
       project_id: project[0].id,
       title: 'Getting Started',
-      content: 'This is the initial project documentation.',
-      created_by: user[0].id
+      content: 'This is the initial project documentation.'
     };
 
-    const result = await createProjectWiki(testInput);
+    const result = await createProjectWiki(testInput, user[0].id);
 
     // Basic field validation
     expect(result.project_id).toEqual(project[0].id);
@@ -118,12 +116,11 @@ describe('createProjectWiki', () => {
 
     const testInput: CreateProjectWikiInput = {
       project_id: project[0].id,
-      title: 'Getting Started',
-      content: 'This is the initial project documentation.',
-      created_by: user[0].id
+      title: 'Database Wiki Entry',
+      content: 'This wiki entry will be saved to the database.'
     };
 
-    const result = await createProjectWiki(testInput);
+    const result = await createProjectWiki(testInput, user[0].id);
 
     // Query the database to verify
     const wikiEntries = await db.select()
@@ -133,8 +130,8 @@ describe('createProjectWiki', () => {
 
     expect(wikiEntries).toHaveLength(1);
     expect(wikiEntries[0].project_id).toEqual(project[0].id);
-    expect(wikiEntries[0].title).toEqual('Getting Started');
-    expect(wikiEntries[0].content).toEqual('This is the initial project documentation.');
+    expect(wikiEntries[0].title).toEqual('Database Wiki Entry');
+    expect(wikiEntries[0].content).toEqual('This wiki entry will be saved to the database.');
     expect(wikiEntries[0].version).toEqual(1);
     expect(wikiEntries[0].created_by).toEqual(user[0].id);
     expect(wikiEntries[0].created_at).toBeInstanceOf(Date);
@@ -186,11 +183,10 @@ describe('createProjectWiki', () => {
     const testInput: CreateProjectWikiInput = {
       project_id: project[0].id,
       title: 'API Documentation',
-      content: 'Comprehensive API documentation for the project.',
-      created_by: user[0].id
+      content: 'Comprehensive API documentation for the project.'
     };
 
-    const result = await createProjectWiki(testInput);
+    const result = await createProjectWiki(testInput, user[0].id);
 
     // Verify version is set to 1 for new wiki entry
     expect(result.version).toEqual(1);

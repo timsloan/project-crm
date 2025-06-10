@@ -3,7 +3,7 @@ import { db } from '../db';
 import { projectWikiTable } from '../db/schema';
 import { type CreateProjectWikiInput, type ProjectWiki } from '../schema';
 
-export const createProjectWiki = async (input: CreateProjectWikiInput): Promise<ProjectWiki> => {
+export const createProjectWiki = async (input: CreateProjectWikiInput, currentUserId: number): Promise<ProjectWiki> => {
   try {
     // Insert project wiki record
     const result = await db.insert(projectWikiTable)
@@ -12,7 +12,7 @@ export const createProjectWiki = async (input: CreateProjectWikiInput): Promise<
         title: input.title,
         content: input.content,
         version: 1, // First version
-        created_by: input.created_by
+        created_by: currentUserId
       })
       .returning()
       .execute();

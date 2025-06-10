@@ -1,5 +1,5 @@
 
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import 'dotenv/config';
 import cors from 'cors';
@@ -20,7 +20,9 @@ import {
   getProjectTasksInputSchema,
   createNoteInputSchema,
   updateNoteInputSchema,
-  getProjectNotesInputSchema
+  getProjectNotesInputSchema,
+  signupInputSchema,
+  loginInputSchema
 } from './schema';
 
 // Import handlers
@@ -42,18 +44,49 @@ import { updateTask } from './handlers/update_task';
 import { createNote } from './handlers/create_note';
 import { getProjectNotes } from './handlers/get_project_notes';
 import { updateNote } from './handlers/update_note';
+import { signup } from './handlers/signup';
+import { login } from './handlers/login';
 
-const t = initTRPC.create({
+// Context type
+interface Context {
+  userId?: number;
+}
+
+const t = initTRPC.context<Context>().create({
   transformer: superjson,
 });
 
 const publicProcedure = t.procedure;
 const router = t.router;
 
+// Protected procedure that requires authentication
+const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.userId) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in to access this resource',
+    });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      userId: ctx.userId, // now non-nullable
+    },
+  });
+});
+
 const appRouter = router({
   healthcheck: publicProcedure.query(() => {
     return { status: 'ok', timestamp: new Date().toISOString() };
   }),
+
+  // Auth routes
+  signup: publicProcedure
+    .input(signupInputSchema)
+    .mutation(({ input }) => signup(input)),
+  login: publicProcedure
+    .input(loginInputSchema)
+    .mutation(({ input }) => login(input)),
 
   // Company routes
   createCompany: publicProcedure
@@ -76,46 +109,46 @@ const appRouter = router({
   getUsers: publicProcedure
     .query(() => getUsers()),
 
-  // Project routes
-  createProject: publicProcedure
+  // Project routes (protected)
+  createProject: protectedProcedure
     .input(createProjectInputSchema)
-    .mutation(({ input }) => createProject(input)),
-  getProjects: publicProcedure
+    .mutation(({ input, ctx }) => createProject(input, ctx.userId)),
+  getProjects: protectedProcedure
     .query(() => getProjects()),
-  getProject: publicProcedure
+  getProject: protectedProcedure
     .input(getProjectInputSchema)
     .query(({ input }) => getProject(input)),
-  updateProject: publicProcedure
+  updateProject: protectedProcedure
     .input(updateProjectInputSchema)
     .mutation(({ input }) => updateProject(input)),
 
-  // Project Wiki routes
-  createProjectWiki: publicProcedure
+  // Project Wiki routes (protected)
+  createProjectWiki: protectedProcedure
     .input(createProjectWikiInputSchema)
-    .mutation(({ input }) => createProjectWiki(input)),
-  getProjectWikiHistory: publicProcedure
+    .mutation(({ input, ctx }) => createProjectWiki(input, ctx.userId)),
+  getProjectWikiHistory: protectedProcedure
     .input(getProjectWikiHistoryInputSchema)
     .query(({ input }) => getProjectWikiHistory(input)),
 
-  // Task routes
-  createTask: publicProcedure
+  // Task routes (protected)
+  createTask: protectedProcedure
     .input(createTaskInputSchema)
-    .mutation(({ input }) => createTask(input)),
-  getProjectTasks: publicProcedure
+    .mutation(({ input, ctx }) => createTask(input, ctx.userId)),
+  getProjectTasks: protectedProcedure
     .input(getProjectTasksInputSchema)
     .query(({ input }) => getProjectTasks(input)),
-  updateTask: publicProcedure
+  updateTask: protectedProcedure
     .input(updateTaskInputSchema)
     .mutation(({ input }) => updateTask(input)),
 
-  // Note routes
-  createNote: publicProcedure
+  // Note routes (protected)
+  createNote: protectedProcedure
     .input(createNoteInputSchema)
-    .mutation(({ input }) => createNote(input)),
-  getProjectNotes: publicProcedure
+    .mutation(({ input, ctx }) => createNote(input, ctx.userId)),
+  getProjectNotes: protectedProcedure
     .input(getProjectNotesInputSchema)
-    .query(({ input }) => getProjectNotes(input)),
-  updateNote: publicProcedure
+    .query(({ input, ctx }) => getProjectNotes(input, ctx.userId)),
+  updateNote: protectedProcedure
     .input(updateNoteInputSchema)
     .mutation(({ input }) => updateNote(input)),
 });
@@ -129,8 +162,13 @@ async function start() {
       cors()(req, res, next);
     },
     router: appRouter,
-    createContext() {
-      return {};
+    createContext({ req }): Context {
+      // For now, we'll simulate user authentication via headers
+      // In a real app, you'd parse JWT tokens or session cookies
+      const userId = req.headers['x-user-id'];
+      return {
+        userId: userId ? parseInt(userId as string) : undefined,
+      };
     },
   });
   server.listen(port);

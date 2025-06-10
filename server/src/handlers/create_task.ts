@@ -3,7 +3,7 @@ import { db } from '../db';
 import { tasksTable } from '../db/schema';
 import { type CreateTaskInput, type Task } from '../schema';
 
-export const createTask = async (input: CreateTaskInput): Promise<Task> => {
+export const createTask = async (input: CreateTaskInput, currentUserId: number): Promise<Task> => {
   try {
     // Insert task record
     const result = await db.insert(tasksTable)
@@ -15,7 +15,7 @@ export const createTask = async (input: CreateTaskInput): Promise<Task> => {
         due_date: input.due_date,
         project_id: input.project_id,
         assigned_to: input.assigned_to,
-        created_by: input.created_by
+        created_by: currentUserId
       })
       .returning()
       .execute();

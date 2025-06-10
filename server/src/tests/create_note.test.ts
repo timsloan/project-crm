@@ -49,11 +49,10 @@ describe('createNote', () => {
     const testInput: CreateNoteInput = {
       content: 'This is a test note',
       is_private: false,
-      project_id: project[0].id,
-      created_by: user[0].id
+      project_id: project[0].id
     };
 
-    const result = await createNote(testInput);
+    const result = await createNote(testInput, user[0].id);
 
     // Basic field validation
     expect(result.content).toEqual('This is a test note');
@@ -103,11 +102,10 @@ describe('createNote', () => {
     const testInput: CreateNoteInput = {
       content: 'This is a private note',
       is_private: true,
-      project_id: project[0].id,
-      created_by: user[0].id
+      project_id: project[0].id
     };
 
-    const result = await createNote(testInput);
+    const result = await createNote(testInput, user[0].id);
 
     // Basic field validation
     expect(result.content).toEqual('This is a private note');
@@ -157,11 +155,10 @@ describe('createNote', () => {
     const testInput: CreateNoteInput = {
       content: 'Database test note',
       is_private: false,
-      project_id: project[0].id,
-      created_by: user[0].id
+      project_id: project[0].id
     };
 
-    const result = await createNote(testInput);
+    const result = await createNote(testInput, user[0].id);
 
     // Query using proper drizzle syntax
     const notes = await db.select()
@@ -217,11 +214,10 @@ describe('createNote', () => {
     const testInput: CreateNoteInput = {
       content: 'Note with default privacy',
       is_private: false, // Explicitly set to test the default is applied
-      project_id: project[0].id,
-      created_by: user[0].id
+      project_id: project[0].id
     };
 
-    const result = await createNote(testInput);
+    const result = await createNote(testInput, user[0].id);
 
     // Verify default was applied
     expect(result.is_private).toEqual(false);

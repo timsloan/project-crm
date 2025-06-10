@@ -3,7 +3,7 @@ import { db } from '../db';
 import { projectsTable } from '../db/schema';
 import { type CreateProjectInput, type Project } from '../schema';
 
-export const createProject = async (input: CreateProjectInput): Promise<Project> => {
+export const createProject = async (input: CreateProjectInput, currentUserId: number): Promise<Project> => {
   try {
     // Insert project record
     const result = await db.insert(projectsTable)
@@ -15,7 +15,7 @@ export const createProject = async (input: CreateProjectInput): Promise<Project>
         start_date: input.start_date,
         end_date: input.end_date,
         company_id: input.company_id,
-        created_by: input.created_by
+        created_by: currentUserId
       })
       .returning()
       .execute();

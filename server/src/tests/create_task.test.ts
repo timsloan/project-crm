@@ -80,11 +80,10 @@ describe('createTask', () => {
       priority: 'medium',
       due_date: new Date('2024-12-31'),
       project_id: testProjectId,
-      assigned_to: testAssigneeId,
-      created_by: testUserId
+      assigned_to: testAssigneeId
     };
 
-    const result = await createTask(testInput);
+    const result = await createTask(testInput, testUserId);
 
     // Basic field validation
     expect(result.title).toEqual('Test Task');
@@ -108,11 +107,10 @@ describe('createTask', () => {
       priority: 'high',
       due_date: null,
       project_id: testProjectId,
-      assigned_to: null,
-      created_by: testUserId
+      assigned_to: null
     };
 
-    const result = await createTask(testInput);
+    const result = await createTask(testInput, testUserId);
 
     expect(result.title).toEqual('Minimal Task');
     expect(result.description).toBeNull();
@@ -133,11 +131,10 @@ describe('createTask', () => {
       priority: 'urgent',
       due_date: new Date('2024-06-15'),
       project_id: testProjectId,
-      assigned_to: testAssigneeId,
-      created_by: testUserId
+      assigned_to: testAssigneeId
     };
 
-    const result = await createTask(testInput);
+    const result = await createTask(testInput, testUserId);
 
     // Query database to verify task was saved
     const tasks = await db.select()
@@ -171,11 +168,10 @@ describe('createTask', () => {
           priority,
           due_date: new Date(),
           project_id: testProjectId,
-          assigned_to: testAssigneeId,
-          created_by: testUserId
+          assigned_to: testAssigneeId
         };
 
-        const result = await createTask(testInput);
+        const result = await createTask(testInput, testUserId);
 
         expect(result.status).toEqual(status);
         expect(result.priority).toEqual(priority);

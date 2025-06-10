@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Building2, CheckSquare, FileText, Plus, Eye, Lock } from 'lucide-react';
+import { Calendar, Building2, CheckSquare, FileText, Plus, Eye, Lock, LogIn, UserPlus, LogOut } from 'lucide-react';
 import { trpc } from '@/utils/trpc';
 import type { 
   Project, 
@@ -18,12 +17,15 @@ import type {
   Note, 
   CreateProjectInput, 
   CreateTaskInput, 
-  CreateNoteInput 
+  CreateNoteInput,
+  SignupInput,
+  LoginInput,
+  AuthResponse
 } from '../../server/src/schema';
 
-const CURRENT_USER_ID = 1;
-
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -33,6 +35,19 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('projects');
 
+  // Auth form states
+  const [loginForm, setLoginForm] = useState<LoginInput>({
+    email: '',
+    password: ''
+  });
+
+  const [signupForm, setSignupForm] = useState<SignupInput>({
+    email: '',
+    password: '',
+    first_name: '',
+    last_name: ''
+  });
+
   // Form states
   const [projectForm, setProjectForm] = useState<CreateProjectInput>({
     name: '',
@@ -41,8 +56,7 @@ function App() {
     estimated_value: null,
     start_date: null,
     end_date: null,
-    company_id: 0,
-    created_by: CURRENT_USER_ID
+    company_id: 0
   });
 
   const [taskForm, setTaskForm] = useState<CreateTaskInput>({
@@ -52,19 +66,29 @@ function App() {
     priority: 'medium',
     due_date: null,
     project_id: 0,
-    assigned_to: null,
-    created_by: CURRENT_USER_ID
+    assigned_to: null
   });
 
   const [noteForm, setNoteForm] = useState<CreateNoteInput>({
     content: '',
     is_private: false,
-    project_id: 0,
-    created_by: CURRENT_USER_ID
+    project_id: 0
   });
+
+  // Check for existing auth on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('loggedInUser');
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      setLoggedInUser(user);
+      setIsLoggedIn(true);
+    }
+  }, []);
 
   // Load initial data
   const loadData = useCallback(async () => {
+    if (!isLoggedIn) return;
+    
     try {
       const [projectsData, companiesData, usersData] = await Promise.all([
         trpc.getProjects.query(),
@@ -77,7 +101,7 @@ function App() {
     } catch (error) {
       console.error('Failed to load data:', error);
     }
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     loadData();
@@ -88,7 +112,7 @@ function App() {
     try {
       const [tasks, notes] = await Promise.all([
         trpc.getProjectTasks.query({ project_id: projectId }),
-        trpc.getProjectNotes.query({ project_id: projectId, user_id: CURRENT_USER_ID })
+        trpc.getProjectNotes.query({ project_id: projectId })
       ]);
       setSelectedProjectTasks(tasks);
       setSelectedProjectNotes(notes);
@@ -101,6 +125,52 @@ function App() {
     setSelectedProject(project);
     loadProjectDetails(project.id);
     setActiveTab('overview');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response: AuthResponse = await trpc.login.mutate(loginForm);
+      setLoggedInUser(response.user);
+      setIsLoggedIn(true);
+      localStorage.setItem('loggedInUser', JSON.stringify(response.user));
+      setLoginForm({ email: '', password: '' });
+    } catch (error) {
+      console.error('Failed to login:', error);
+      alert('Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response: AuthResponse = await trpc.signup.mutate(signupForm);
+      setLoggedInUser(response.user);
+      setIsLoggedIn(true);
+      localStorage.setItem('loggedInUser', JSON.stringify(response.user));
+      setSignupForm({ email: '', password: '', first_name: '', last_name: '' });
+    } catch (error) {
+      console.error('Failed to signup:', error);
+      alert('Signup failed. Please check your information.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setLoggedInUser(null);
+    setIsLoggedIn(false);
+    localStorage.removeItem('loggedInUser');
+    setProjects([]);
+    setCompanies([]);
+    setUsers([]);
+    setSelectedProject(null);
+    setSelectedProjectTasks([]);
+    setSelectedProjectNotes([]);
   };
 
   const handleCreateProject = async (e: React.FormEvent) => {
@@ -118,8 +188,7 @@ function App() {
         estimated_value: null,
         start_date: null,
         end_date: null,
-        company_id: 0,
-        created_by: CURRENT_USER_ID
+        company_id: 0
       });
     } catch (error) {
       console.error('Failed to create project:', error);
@@ -144,8 +213,7 @@ function App() {
         priority: 'medium',
         due_date: null,
         project_id: 0,
-        assigned_to: null,
-        created_by: CURRENT_USER_ID
+        assigned_to: null
       });
     } catch (error) {
       console.error('Failed to create task:', error);
@@ -166,8 +234,7 @@ function App() {
       setNoteForm({
         content: '',
         is_private: false,
-        project_id: 0,
-        created_by: CURRENT_USER_ID
+        project_id: 0
       });
     } catch (error) {
       console.error('Failed to create note:', error);
@@ -209,6 +276,106 @@ function App() {
     return user ? `${user.first_name} ${user.last_name}` : 'Unknown User';
   };
 
+  // Render login/signup forms if not logged in
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <Building2 className="h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900">🏗️ Construction CRM</h1>
+            </div>
+            <CardTitle className="text-center">Welcome to Construction CRM</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login" className="flex items-center space-x-1">
+                  <LogIn className="h-4 w-4" />
+                  <span>Log In</span>
+                </TabsTrigger>
+                <TabsTrigger value="signup" className="flex items-center space-x-1">
+                  <UserPlus className="h-4 w-4" />
+                  <span>Sign Up</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="login" className="space-y-4 mt-6">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <Input
+                    type="email"
+                    placeholder="Email"
+                    value={loginForm.email}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setLoginForm((prev: LoginInput) => ({ ...prev, email: e.target.value }))
+                    }
+                    required
+                  />
+                  <Input
+                    type="password"
+                    placeholder="Password"
+                    value={loginForm.password}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setLoginForm((prev: LoginInput) => ({ ...prev, password: e.target.value }))
+                    }
+                    required
+                  />
+                  <Button type="submit" disabled={isLoading} className="w-full">
+                    {isLoading ? 'Logging in...' : 'Log In'}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="signup" className="space-y-4 mt-6">
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <Input
+                    placeholder="First Name"
+                    value={signupForm.first_name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSignupForm((prev: SignupInput) => ({ ...prev, first_name: e.target.value }))
+                    }
+                    required
+                  />
+                  <Input
+                    placeholder="Last Name"
+                    value={signupForm.last_name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSignupForm((prev: SignupInput) => ({ ...prev, last_name: e.target.value }))
+                    }
+                    required
+                  />
+                  <Input
+                    type="email"
+                    placeholder="Email"
+                    value={signupForm.email}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSignupForm((prev: SignupInput) => ({ ...prev, email: e.target.value }))
+                    }
+                    required
+                  />
+                  <Input
+                    type="password"
+                    placeholder="Password (min 6 characters)"
+                    value={signupForm.password}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSignupForm((prev: SignupInput) => ({ ...prev, password: e.target.value }))
+                    }
+                    required
+                    minLength={6}
+                  />
+                  <Button type="submit" disabled={isLoading} className="w-full">
+                    {isLoading ? 'Signing up...' : 'Sign Up'}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto p-6">
@@ -218,9 +385,25 @@ function App() {
             <Building2 className="h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">🏗️ Construction CRM</h1>
           </div>
-          <Badge variant="outline" className="px-3 py-1">
-            Sales Team Dashboard
-          </Badge>
+          <div className="flex items-center space-x-4">
+            <Button variant="outline" className="px-3 py-1">
+              Sales Team Dashboard
+            </Button>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">
+                Welcome, {loggedInUser?.first_name}!
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center space-x-1"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -262,6 +445,23 @@ function App() {
                           }))
                         }
                       />
+                      <Select 
+                        value={projectForm.status} 
+                        onValueChange={(value: 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled') =>
+                          setProjectForm((prev: CreateProjectInput) => ({ ...prev, status: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Project status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="planning">Planning</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="on_hold">On Hold</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <Select 
                         value={projectForm.company_id.toString()} 
                         onValueChange={(value: string) =>

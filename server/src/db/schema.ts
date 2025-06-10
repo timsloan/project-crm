@@ -37,6 +37,16 @@ export const usersTable = pgTable('users', {
   updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Auth Users table (for authentication)
+export const authUsersTable = pgTable('auth_users', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').notNull(),
+  email: text('email').notNull().unique(),
+  hashed_password: text('hashed_password').notNull(),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Projects table
 export const projectsTable = pgTable('projects', {
   id: serial('id').primaryKey(),
@@ -108,6 +118,14 @@ export const usersRelations = relations(usersTable, ({ one, many }) => ({
   createdTasks: many(tasksTable, { relationName: 'taskCreator' }),
   createdNotes: many(notesTable),
   createdWikiEntries: many(projectWikiTable),
+  authUser: one(authUsersTable),
+}));
+
+export const authUsersRelations = relations(authUsersTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [authUsersTable.user_id],
+    references: [usersTable.id],
+  }),
 }));
 
 export const projectsRelations = relations(projectsTable, ({ one, many }) => ({
@@ -169,6 +187,7 @@ export const tables = {
   companies: companiesTable,
   teams: teamsTable,
   users: usersTable,
+  authUsers: authUsersTable,
   projects: projectsTable,
   projectWiki: projectWikiTable,
   tasks: tasksTable,

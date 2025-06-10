@@ -4,7 +4,7 @@ import { notesTable } from '../db/schema';
 import { type GetProjectNotesInput, type Note } from '../schema';
 import { eq, and, or } from 'drizzle-orm';
 
-export const getProjectNotes = async (input: GetProjectNotesInput): Promise<Note[]> => {
+export const getProjectNotes = async (input: GetProjectNotesInput, currentUserId: number): Promise<Note[]> => {
   try {
     // Get all notes for the project that are either:
     // 1. Public notes (is_private = false), OR
@@ -18,7 +18,7 @@ export const getProjectNotes = async (input: GetProjectNotesInput): Promise<Note
             eq(notesTable.is_private, false),
             and(
               eq(notesTable.is_private, true),
-              eq(notesTable.created_by, input.user_id)
+              eq(notesTable.created_by, currentUserId)
             )
           )
         )

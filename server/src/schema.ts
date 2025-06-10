@@ -61,6 +61,41 @@ export const createUserInputSchema = z.object({
 
 export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 
+// Auth schema
+export const signupInputSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  first_name: z.string().min(1),
+  last_name: z.string().min(1)
+});
+
+export type SignupInput = z.infer<typeof signupInputSchema>;
+
+export const loginInputSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1)
+});
+
+export type LoginInput = z.infer<typeof loginInputSchema>;
+
+export const authUserSchema = z.object({
+  id: z.number(),
+  user_id: z.number(),
+  email: z.string(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date()
+});
+
+export type AuthUser = z.infer<typeof authUserSchema>;
+
+// Auth response for successful login/signup
+export const authResponseSchema = z.object({
+  user: userSchema,
+  token: z.string().optional() // For future JWT implementation
+});
+
+export type AuthResponse = z.infer<typeof authResponseSchema>;
+
 // Project schema
 export const projectSchema = z.object({
   id: z.number(),
@@ -85,8 +120,8 @@ export const createProjectInputSchema = z.object({
   estimated_value: z.number().positive().nullable(),
   start_date: z.coerce.date().nullable(),
   end_date: z.coerce.date().nullable(),
-  company_id: z.number(),
-  created_by: z.number()
+  company_id: z.number()
+  // removed created_by - will be set from context
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectInputSchema>;
@@ -120,8 +155,8 @@ export type ProjectWiki = z.infer<typeof projectWikiSchema>;
 export const createProjectWikiInputSchema = z.object({
   project_id: z.number(),
   title: z.string().min(1),
-  content: z.string(),
-  created_by: z.number()
+  content: z.string()
+  // removed created_by - will be set from context
 });
 
 export type CreateProjectWikiInput = z.infer<typeof createProjectWikiInputSchema>;
@@ -150,8 +185,8 @@ export const createTaskInputSchema = z.object({
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
   due_date: z.coerce.date().nullable(),
   project_id: z.number(),
-  assigned_to: z.number().nullable(),
-  created_by: z.number()
+  assigned_to: z.number().nullable()
+  // removed created_by - will be set from context
 });
 
 export type CreateTaskInput = z.infer<typeof createTaskInputSchema>;
@@ -184,8 +219,8 @@ export type Note = z.infer<typeof noteSchema>;
 export const createNoteInputSchema = z.object({
   content: z.string().min(1),
   is_private: z.boolean().default(false),
-  project_id: z.number(),
-  created_by: z.number()
+  project_id: z.number()
+  // removed created_by - will be set from context
 });
 
 export type CreateNoteInput = z.infer<typeof createNoteInputSchema>;
@@ -205,8 +240,8 @@ export const getProjectInputSchema = z.object({
 export type GetProjectInput = z.infer<typeof getProjectInputSchema>;
 
 export const getProjectNotesInputSchema = z.object({
-  project_id: z.number(),
-  user_id: z.number() // For filtering private notes
+  project_id: z.number()
+  // removed user_id - will be set from context
 });
 
 export type GetProjectNotesInput = z.infer<typeof getProjectNotesInputSchema>;

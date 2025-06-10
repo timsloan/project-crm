@@ -57,11 +57,10 @@ describe('createProject', () => {
       estimated_value: 50000.75,
       start_date: new Date('2024-01-01'),
       end_date: new Date('2024-12-31'),
-      company_id: companyId,
-      created_by: userId
+      company_id: companyId
     };
 
-    const result = await createProject(testInput);
+    const result = await createProject(testInput, userId);
 
     // Basic field validation
     expect(result.name).toEqual('Test Project');
@@ -86,11 +85,10 @@ describe('createProject', () => {
       estimated_value: null,
       start_date: null,
       end_date: null,
-      company_id: companyId,
-      created_by: userId
+      company_id: companyId
     };
 
-    const result = await createProject(testInput);
+    const result = await createProject(testInput, userId);
 
     expect(result.name).toEqual('Planning Project');
     expect(result.description).toBeNull();
@@ -110,11 +108,10 @@ describe('createProject', () => {
       estimated_value: 25000.50,
       start_date: new Date('2024-06-01'),
       end_date: new Date('2024-11-30'),
-      company_id: companyId,
-      created_by: userId
+      company_id: companyId
     };
 
-    const result = await createProject(testInput);
+    const result = await createProject(testInput, userId);
 
     // Query using proper drizzle syntax
     const projects = await db.select()
@@ -144,11 +141,10 @@ describe('createProject', () => {
       estimated_value: null,
       start_date: null,
       end_date: null,
-      company_id: companyId,
-      created_by: userId
+      company_id: companyId
     };
 
-    const result = await createProject(testInput);
+    const result = await createProject(testInput, userId);
 
     expect(result.estimated_value).toBeNull();
     
