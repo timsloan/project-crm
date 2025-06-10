@@ -1,4 +1,25 @@
 
+import { db } from '../db';
+import { projectWikiTable } from '../db/schema';
 import { type CreateProjectWikiInput, type ProjectWiki } from '../schema';
 
-export declare function createProjectWiki(input: CreateProjectWikiInput): Promise<ProjectWiki>;
+export const createProjectWiki = async (input: CreateProjectWikiInput): Promise<ProjectWiki> => {
+  try {
+    // Insert project wiki record
+    const result = await db.insert(projectWikiTable)
+      .values({
+        project_id: input.project_id,
+        title: input.title,
+        content: input.content,
+        version: 1, // First version
+        created_by: input.created_by
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Project wiki creation failed:', error);
+    throw error;
+  }
+};
